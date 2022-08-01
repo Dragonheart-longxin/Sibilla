@@ -1,39 +1,53 @@
-#include <MiraiCP.hpp>
-using namespace MiraiCP;
+#include "Sibilla.hpp"
 
-const PluginConfig CPPPlugin::config{
-        "com.DragonheartLX.Sibilla",            // 插件id
-        "SibillaBot",                           // 插件名称
-        "0.0.0alpha",                           // 插件版本
-        "DragonheartLX",                        // 插件作者
-        "A QQ Bot"                              // 可选：插件描述
-        /*__DATE__*/                            // 可选：日期
-};
+void Main::onEnable() {
+	initEnvironment();
 
-// 插件实例
-class Main : public CPPPlugin {
-public:
-  // 配置插件信息
-  Main() : CPPPlugin() {}
-  ~Main() override = default;
+	// 请在此处监听
+	Event::registerEvent<GroupMessageEvent>([&](GroupMessageEvent event) {
 
-  // 入口函数
-  void onEnable() override {
-    // 请在此处监听
-    Event::registerEvent<GroupMessageEvent>([](GroupMessageEvent event){
+		if (event.message == MessageChain(PlainText(".莉丝上班")))
+		{
+			if(addActiveGroup(event.group.id(), event.bot.id, true))
+				event.group.sendMessage("Sibilla enabled.");
+			return;
+		};
 
-      event.group.sendMessage(event.message);
+		if (event.message == MessageChain(PlainText(".莉丝下班")))
+		{
+			if(removeActiveGroup(event.group.id(), event.bot.id))
+				event.group.sendMessage("Sibilla disabled.");
+			return;
+		};
 
-    });
-  }
+		if (isGroupActive(event.group.id(), event.bot.id))
+		{
+			messageProcess(event);
+		};
 
-  // 退出函数
-  void onDisable() override {
-    /*插件结束前执行*/
-  }
-};
+		});
 
-// 绑定当前插件实例
-void MiraiCP::enrollPlugin() {
-  MiraiCP::enrollPlugin(new Main);
 }
+
+void Main::onDisable() {
+	/*插件结束前执行
+	保存配置，功能数据
+	*/
+	KWR.save();
+}
+
+//处理启用群组的消息并分发至功能
+void  Main::messageProcess(GroupMessageEvent event) {
+
+	KWR.Main(event);
+};
+
+void  Main::initEnvironment() {
+
+	/*获取配置文件（如果初次启动创建默认配置文件）
+	关键词
+	功能激活情况
+	功能的数据
+	*/
+	KWR.loadFromFile("KWR.txt");
+};
